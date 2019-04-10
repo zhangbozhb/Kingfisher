@@ -59,6 +59,23 @@ public enum MemoryStorage {
             }
         }
 
+        class BlockHandler: NSObject {
+            weak var timer:Timer?
+            var block:((Timer) -> Void)?
+
+            @objc func invoke() {
+                guard let t = timer else {
+                    return
+                }
+                block?(t)
+            }
+
+            init(with block:((Timer) -> Void)?) {
+                self.block = block
+                super.init()
+            }
+        }
+
         /// Creates a `MemoryStorage` with a given `config`.
         ///
         /// - Parameter config: The config used to create the storage. It determines the max size limitation,
@@ -72,9 +89,19 @@ public enum MemoryStorage {
                 self.keys.remove(obj.key)
             }
 
-            cleanTimer = .scheduledTimer(withTimeInterval: config.cleanInterval, repeats: true) { [weak self] _ in
-                guard let self = self else { return }
-                self.removeExpired()
+            if #available(iOSApplicationExtension 10.0, *) {
+                cleanTimer = .scheduledTimer(withTimeInterval: config.cleanInterval, repeats: true) { [weak self] _ in
+                    guard let self = self else { return }
+                    self.removeExpired()
+                }
+            } else {
+                let bh = BlockHandler.init { [weak self](_) in
+                    guard let self = self else { return }
+                    self.removeExpired()
+                }
+                let timer = Timer.scheduledTimer(timeInterval: config.cleanInterval, target: bh, selector: #selector(BlockHandler.invoke), userInfo: nil, repeats: true)
+                bh.timer = timer
+                cleanTimer = timer
             }
         }
 

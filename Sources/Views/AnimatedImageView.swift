@@ -268,8 +268,8 @@ open class AnimatedImageView: UIImageView {
     }
     
     /// Update the current frame with the displayLink duration.
-    @available(iOSApplicationExtension 10.0, *)
-    @available(iOSApplicationExtension 10.0, *)
+    @available(iOSApplicationExtension 9.0, *)
+    @available(iOSApplicationExtension 9.0, *)
     private func updateFrameIfNeeded() {
         guard let animator = animator else {
             return
@@ -288,11 +288,15 @@ open class AnimatedImageView: UIImageView {
         // See [#718](https://github.com/onevcat/Kingfisher/issues/718)
         // By setting CADisableMinimumFrameDuration to YES in Info.plist may
         // cause the preferredFramesPerSecond being 0
-        if displayLink.preferredFramesPerSecond == 0 {
-            duration = displayLink.duration
+        if #available(iOSApplicationExtension 10.0, *) {
+            if displayLink.preferredFramesPerSecond == 0 {
+                duration = displayLink.duration
+            } else {
+                // Some devices (like iPad Pro 10.5) will have a different FPS.
+                duration = 1.0 / Double(displayLink.preferredFramesPerSecond)
+            }
         } else {
-            // Some devices (like iPad Pro 10.5) will have a different FPS.
-            duration = 1.0 / Double(displayLink.preferredFramesPerSecond)
+            duration = displayLink.duration
         }
 
         animator.shouldChangeFrame(with: duration) { [weak self] hasNewFrame in
