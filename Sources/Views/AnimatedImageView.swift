@@ -268,6 +268,8 @@ open class AnimatedImageView: UIImageView {
     }
     
     /// Update the current frame with the displayLink duration.
+    @available(iOSApplicationExtension 10.0, *)
+    @available(iOSApplicationExtension 10.0, *)
     private func updateFrameIfNeeded() {
         guard let animator = animator else {
             return
